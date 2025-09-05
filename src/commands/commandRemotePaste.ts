@@ -40,7 +40,19 @@ export default checkCommand({
       return;
     }
     const remotefs = await ctx.fileService.getRemoteFileSystem(ctx.config);
-    const destDir = ctx.target.remoteFsPath; // paste into this folder
+    // Determine destination directory:
+    // - If target is a folder, paste into it
+    // - If target is a file, paste into its parent folder (for parity with VS Code Explorer)
+    let destDir = ctx.target.remoteFsPath;
+    try {
+      const stat = await remotefs.lstat(destDir);
+      if (stat.type !== FileType.Directory) {
+        destDir = remotefs.pathResolver.dirname(destDir);
+      }
+    } catch {
+      // If lstat fails (e.g., target disappeared), fallback to parent directory
+      destDir = remotefs.pathResolver.dirname(destDir);
+    }
     for (const entry of clip.entries) {
       const base = path.posix.basename(entry.path);
       const destPath = path.posix.join(destDir, base);
@@ -63,4 +75,3 @@ export default checkCommand({
     clearRemoteClipboard();
   },
 });
-

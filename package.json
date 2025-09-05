@@ -448,6 +448,22 @@
         "title": "%sftp.command.downloadFolderAs%",
         "category": "SFTP"
       }
+      ,
+      {
+        "command": "sftp.remote.cut",
+        "title": "%sftp.command.remoteCut%",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.remote.copy",
+        "title": "%sftp.command.remoteCopy%",
+        "category": "SFTP"
+      },
+      {
+        "command": "sftp.remote.paste",
+        "title": "%sftp.command.remotePaste%",
+        "category": "SFTP"
+      }
     ],
     "menus": {
       "view/title": [
@@ -755,7 +771,7 @@
 
         { "command": "sftp.remote.cut", "group": "2_clip@1", "when": "view == remoteExplorer && viewItem != root && viewItem != group" },
         { "command": "sftp.remote.copy", "group": "2_clip@1", "when": "view == remoteExplorer && viewItem != root && viewItem != group" },
-        { "command": "sftp.remote.paste", "group": "2_clip@2", "when": "view == remoteExplorer && viewItem == folder" },
+        { "command": "sftp.remote.paste", "group": "2_clip@2", "when": "view == remoteExplorer && viewItem != root && viewItem != group" },
 
         { "command": "sftp.copyRemotePath.generic", "group": "3_paths@1", "when": "view == remoteExplorer && viewItem != root && viewItem != group" },
         { "command": "sftp.copyRemoteRelativePath.generic", "group": "3_paths@1", "when": "view == remoteExplorer && viewItem != root && viewItem != group" },
