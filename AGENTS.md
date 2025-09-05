@@ -57,3 +57,7 @@ These steps ensure the CI pipeline produces the VSIX artifact for verification.
 ## Security & Configuration Tips
 - Config lives in `.vscode/sftp.json` (validated by `schema/config.schema.json`). Never log or commit credentials.
 - Use `sftp.debug` only when needed and avoid printing secrets in logs.
+
+## User Communication Language
+- Default: respond to users in Japanese unless explicitly requested otherwise.
+- Developer-facing content (source code, commit messages, AGENTS.md, etc.) should remain concise English to conserve tokens.
