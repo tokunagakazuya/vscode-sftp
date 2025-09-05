@@ -54,8 +54,8 @@
   "sftp.command.groupByHost": "Group by Host",
   "sftp.command.groupByContext": "Group by Context",
   "sftp.command.groupByDefault": "Default Grouping",
-  "sftp.command.renameFile": "Rename File",
-  "sftp.command.renameFolder": "Rename Folder",
+  "sftp.command.renameFile": "Rename",
+  "sftp.command.renameFolder": "Rename",
   "sftp.command.remoteChmod": "Change Permissions",
   "sftp.command.remoteTouch": "Create Empty File",
   "sftp.command.downloadFileAs": "Download File As...",
@@ -72,4 +72,14 @@
   "sftp.message.newerRemote": "The remote file is newer than your local copy. Upload anyway and overwrite the newer remote file?",
   "sftp.button.uploadAnyway": "Upload anyway",
   "sftp.button.skip": "Skip"
+  ,
+  "sftp.button.delete": "Delete",
+  "sftp.button.cancel": "Cancel",
+  "sftp.button.download": "Download",
+  "sftp.message.deleteConfirm": "Are you sure you want to delete",
+  "sftp.message.downloadFolderConfirm": "Download this folder?",
+  "sftp.message.downloadFileConfirm": "Download this file?",
+  "sftp.command.remoteCut": "Cut",
+  "sftp.command.remoteCopy": "Copy",
+  "sftp.command.remotePaste": "Paste"
 }

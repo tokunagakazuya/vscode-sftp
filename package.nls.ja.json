@@ -54,8 +54,8 @@
   "sftp.command.groupByHost": "ホストでグループ化",
   "sftp.command.groupByContext": "コンテキストでグループ化",
   "sftp.command.groupByDefault": "既定のグループ化",
-  "sftp.command.renameFile": "ファイル名の変更",
-  "sftp.command.renameFolder": "フォルダー名の変更",
+  "sftp.command.renameFile": "名前の変更",
+  "sftp.command.renameFolder": "名前の変更",
   "sftp.command.remoteChmod": "パーミッションを変更",
   "sftp.command.remoteTouch": "空のファイルを作成",
   "sftp.command.downloadFileAs": "名前を付けてファイルを保存...",
@@ -71,5 +71,14 @@
   ,
   "sftp.message.newerRemote": "リモートのファイルはローカルより新しいようです。上書きしてアップロードしますか？",
   "sftp.button.uploadAnyway": "上書きしてアップロード",
-  "sftp.button.skip": "スキップ"
+  "sftp.button.skip": "スキップ",
+  "sftp.button.delete": "削除",
+  "sftp.button.cancel": "キャンセル",
+  "sftp.button.download": "ダウンロード",
+  "sftp.message.deleteConfirm": "削除しますか",
+  "sftp.message.downloadFolderConfirm": "このフォルダーをダウンロードしますか？",
+  "sftp.message.downloadFileConfirm": "このファイルをダウンロードしますか？",
+  "sftp.command.remoteCut": "切り取り",
+  "sftp.command.remoteCopy": "コピー",
+  "sftp.command.remotePaste": "貼り付け"
 }

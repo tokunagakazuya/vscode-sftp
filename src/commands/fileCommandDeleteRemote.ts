@@ -2,6 +2,7 @@ import { COMMAND_DELETE_REMOTE } from '../constants';
 import { upath } from '../core';
 import { removeRemote } from '../fileHandlers';
 import { showConfirmMessage } from '../host';
+import { t } from '../i18n';
 import { checkFileCommand } from './abstract/createCommand';
 import { uriFromExplorerContextOrEditorContext } from './shared';
 
@@ -18,9 +19,10 @@ export default checkFileCommand({
       ? targets.map(t => upath.basename(t.fsPath)).join(',')
       : upath.basename(targets.fsPath);
     const result = await showConfirmMessage(
-      `Are you sure you want to delete '${filename}'?`,
-      'Delete',
-      'Cancel'
+      (t('sftp.message.deleteConfirm', 'Are you sure you want to delete') + ` '${filename}'?`),
+      t('sftp.button.delete', 'Delete'),
+      t('sftp.button.cancel', 'Cancel'),
+      { modal: true, severity: 'warn' }
     );
 
     return result ? targets : undefined;
