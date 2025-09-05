@@ -4,7 +4,8 @@ import { checkFileCommand } from './abstract/createCommand';
 import { uriFromExplorerContextOrEditorContext } from './shared';
 import { UResource } from '../core';
 import { getFileService } from '../modules/serviceManager';
-import { refreshRemoteExplorer } from '../fileHandlers/shared';
+// import { refreshRemoteExplorer } from '../fileHandlers/shared';
+import app from '../app';
 
 export default checkFileCommand({
   id: 'sftp.rename.folder',
@@ -23,6 +24,9 @@ export default checkFileCommand({
     await remotefs.ensureDir(parent);
     if (typeof (remotefs as any).renameAtomic === 'function') await (remotefs as any).renameAtomic(res.fsPath, newPath);
     else await remotefs.rename(res.fsPath, newPath);
-    await refreshRemoteExplorer(ctx.target, true);
+    // Refresh parent directory to update children listing after rename
+    const parentRes = UResource.updateResource(res, { remotePath: parent });
+    // Refresh via RemoteTreeData directly to avoid UResource typing mismatch
+    app.remoteExplorer.refresh({ resource: parentRes, isDirectory: true });
   },
 });

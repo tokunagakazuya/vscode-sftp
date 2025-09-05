@@ -1,4 +1,6 @@
 import { refreshRemoteExplorer } from './shared';
+import upath from '../core/upath';
+import { UResource } from '../core';
 import { fileOperations } from '../core';
 import createFileHandler from './createFileHandler';
 import { FileHandleOption } from './option';
@@ -38,7 +40,12 @@ export const createRemoteFile = createFileHandler<FileHandleOption & { skipDir?:
     };
   },
   afterHandle() {
-    refreshRemoteExplorer(this.target, false);
+    // Refresh parent folder to show the newly created file
+    const currentRes = UResource.makeResource(this.target.remoteUri);
+    const parent = UResource.updateResource(currentRes, { remotePath: upath.dirname(this.target.remoteFsPath) });
+    // Use app.remoteExplorer to pass Resource directly
+    const { default: app } = require('../app');
+    app.remoteExplorer.refresh({ resource: parent, isDirectory: true });
   },
 });
 

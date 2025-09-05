@@ -17,10 +17,11 @@ export const diff = createFileHandler({
     });
 
     await fileOperations.transferFile(remoteFsPath, tmpPath, remoteFs, localFs);
+    // Show local on the left and remote on the right for consistency
     await diffFiles(
-      tmpPath,
       localFsPath,
-      `${path.basename(localFsPath)} (${this.fileService.name || 'remote'} ↔ local)`
+      tmpPath,
+      `${path.basename(localFsPath)} (local ↔ ${this.fileService.name || 'remote'})`
     );
   },
 });

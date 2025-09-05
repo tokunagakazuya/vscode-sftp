@@ -13,11 +13,15 @@ export default checkFileCommand({
     const fsService = getFileService(uri);
     if (!fsService) return;
     const remotefs = await fsService.getRemoteFileSystem(ctx.config);
-    const modeStr = await vscode.window.showInputBox({ prompt: 'パーミッション (例: 644)', value: '644' });
+    let current = '644';
+    try {
+      const st = await remotefs.lstat(res.fsPath);
+      current = (st.mode & parseInt('777', 8)).toString(8); // ensure 3-4 digit octal
+    } catch { /* ignore */ }
+    const modeStr = await vscode.window.showInputBox({ prompt: 'パーミッション (例: 644)', value: current });
     if (!modeStr) return;
     const mode = parseInt(modeStr, 8);
     if (isNaN(mode)) return;
     await remotefs.chmod(res.fsPath, mode);
   },
 });
-
