@@ -84,6 +84,10 @@
   "sftp.message.syncLocalToRemoteConfirm": "Sync local → remote?",
   "sftp.message.syncRemoteToLocalConfirm": "Sync remote → local?",
   "sftp.message.syncBothConfirm": "Sync both directions?",
+  "sftp.message.clipboardEmpty": "Clipboard is empty",
+  "sftp.message.cannotPasteAcrossRemotes": "Cannot paste across different remotes",
+  "sftp.message.pasteConfirmMove": "Move items? (overwrite if exists)",
+  "sftp.message.pasteConfirmCopy": "Copy items? (overwrite if exists)",
   "sftp.command.remoteCut": "Cut",
   "sftp.command.remoteCopy": "Copy",
   "sftp.command.remotePaste": "Paste"

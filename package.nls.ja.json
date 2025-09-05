@@ -83,6 +83,10 @@
   "sftp.message.syncLocalToRemoteConfirm": "ローカルからリモートへ同期しますか？",
   "sftp.message.syncRemoteToLocalConfirm": "リモートからローカルへ同期しますか？",
   "sftp.message.syncBothConfirm": "双方向同期を実行しますか？",
+  "sftp.message.clipboardEmpty": "クリップボードは空です",
+  "sftp.message.cannotPasteAcrossRemotes": "異なる接続間では貼り付けできません",
+  "sftp.message.pasteConfirmMove": "選択した項目を移動します。既存のファイルは上書きされます。",
+  "sftp.message.pasteConfirmCopy": "選択した項目をコピーします。既存のファイルは上書きされます。",
   "sftp.command.remoteCut": "切り取り",
   "sftp.command.remoteCopy": "コピー",
   "sftp.command.remotePaste": "貼り付け"

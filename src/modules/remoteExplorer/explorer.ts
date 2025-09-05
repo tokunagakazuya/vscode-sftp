@@ -8,6 +8,7 @@ import { UResource } from '../../core';
 import { toRemotePath } from '../../helper';
 import { getFileService } from '../serviceManager';
 import RemoteTreeDataProvider, { ExplorerItem } from './treeDataProvider';
+import RemoteExplorerDnD from './dragAndDrop';
 
 export default class RemoteExplorer {
   private _explorerView: vscode.TreeView<ExplorerItem>;
@@ -20,7 +21,9 @@ export default class RemoteExplorer {
       showCollapseAll: true,
       treeDataProvider: this._treeDataProvider,
       canSelectMany: true,
-    });
+    } as any);
+    // Attach DnD controller dynamically to support older typings
+    (this._explorerView as any).dragAndDropController = new RemoteExplorerDnD();
 
     registerCommand(context, COMMAND_REMOTEEXPLORER_REFRESH, () => this._refreshSelection());
     registerCommand(context, COMMAND_REMOTEEXPLORER_VIEW_CONTENT, (item: ExplorerItem) =>

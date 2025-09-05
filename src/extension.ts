@@ -11,6 +11,7 @@ import { getAllFileService, createFileService, disposeFileService } from './modu
 import { getWorkspaceFolders, setContextValue } from './host';
 import RemoteExplorer from './modules/remoteExplorer';
 import { registerRemoteFsProvider } from './modules/remoteFsProvider';
+import CutDecorationProvider from './modules/cutDecorationProvider';
 
 async function setupWorkspaceFolder(dir) {
   const configs = await tryLoadConfigs(dir);
@@ -19,7 +20,7 @@ async function setupWorkspaceFolder(dir) {
   });
 }
 
-function setup(workspaceFolders: vscode.WorkspaceFolder[]) {
+function setup(workspaceFolders: readonly vscode.WorkspaceFolder[]) {
   fileActivityMonitor.init();
   const pendingInits = workspaceFolders.map(folder => setupWorkspaceFolder(folder.uri.fsPath));
 
@@ -57,6 +58,11 @@ export async function activate(context: vscode.ExtensionContext) {
     // Enable direct editing for remote: URIs
     registerRemoteFsProvider(context);
     app.remoteExplorer = new RemoteExplorer(context);
+    // Decoration: gray out when items are cut
+    const cutDecorator = new CutDecorationProvider();
+    context.subscriptions.push(
+      vscode.window.registerFileDecorationProvider(cutDecorator)
+    );
   } catch (error) {
     reportError(error);
   }
