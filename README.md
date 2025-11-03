@@ -44,16 +44,11 @@ VSCode-SFTP enables you to add, edit or delete files within a local directory an
 
 ## Installation
 
-### Method 1 (Recommended : Auto update)
-1. Select Extensions (Ctrl + Shift + X).
-2. Uninstall current sftp extension from @liximomo.
-3. Install new extension directly from VS Code Marketplace : https://marketplace.visualstudio.com/items?itemName=tokunagakazuya.sftp.
-4. Voilà!
+To install or update the extension, you need to load a new VSIX file into VSCode. Our VSIX files are produced by Github workflow runs, each time a new commit is done to the repository. You can find them in the ["Actions"](https://github.com/tokunagakazuya/vscode-sftp/actions) tab of the Github repository. In the workflow run list, select the most recent containing a commit, scroll down to the "Artifacts" section and download the VSIX file.
 
-### Method 2 (Manual update)
-To install just follow these steps from within VSCode:
+Then, just follow these steps from within VSCode:
 1. Select Extensions (Ctrl + Shift + X).
-2. Uninstall current sftp extension from @liximomo.
+2. Uninstall any previous sftp extension, including from other repositories such as @liximomo's one.
 3. Open "More Action" menu(ellipsis on the top) and click "Install from VSIX…".
 4. Locate VSIX file and select.
 5. Reload VSCode.
