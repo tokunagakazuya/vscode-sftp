@@ -27,6 +27,9 @@
                 "${workspaceFolder}/**",
                 "!**/node_modules/**"
             ],
+            "env": {
+                "FORCE_COLOR": "true" // makes jest display colors
+            },
             "preLaunchTask": "npm"
         }
     ]
