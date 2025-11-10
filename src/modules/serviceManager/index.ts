@@ -119,7 +119,7 @@ export function createFileService(config: any, workspace: string) {
       // }
       app.sftpBarItem.showMsg(`failed ${filename}`, filepath, 2000 * 2);
     } else {
-      logger.info(`${transferType} ${localFsPath}`);
+      logger.info(`${task['_TransferOption'].dryRun ? "would have done " : ""}${transferType} ${localFsPath}`);
       app.sftpBarItem.showMsg(`done ${filename}`, filepath, 2000 * 2);
     }
   });

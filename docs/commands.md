@@ -39,6 +39,9 @@ Compare file modification times, and will always perform the action that causes 
 
 *Only [skipCreate](https://github.com/Natizyskunk/vscode-sftp/wiki/Configuration#syncoptionskipcreate) and [ignoreExisting](https://github.com/Natizyskunk/vscode-sftp/wiki/Configuration#syncoptionignoreexisting) are valid for this command.*
 
+## SFTP: Sync Dry Run
+Runs `Sync Both Directions`, but does not perform any transfer action.
+
 ## SFTP: List Active Folder
 List the folder the current file is located in.
 

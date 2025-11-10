@@ -14,6 +14,9 @@ import { getOpenTextDocuments } from '../../host';
 
 interface InternalTransferOption extends FileHandleOption, TransferTaskTransferOption {
   warnOnNewerRemote?: boolean;
+
+  // do not actually perform any transfer
+  dryRun?: boolean;
 }
 
 type ExternalTransferOption<T extends InternalTransferOption> = Pick<
@@ -84,12 +87,12 @@ async function transferFolder(
   }
 
   // Need this to make sure file can correct transfer
-  await targetFs.ensureDir(targetFsPath);
+  config.transferOption.dryRun || await targetFs.ensureDir(targetFsPath);
 
   // If dirPerm is configured, we chmod the remote directory after creation.
-  if(config.transferOption.dirPerm) {
-    logger.info("chmod remote directory as configured by dirPerm, dirPerm is: ", config.transferOption.dirPerm)
-    targetFs.chmod(targetFsPath, parseInt(String(config.transferOption.dirPerm), 8))
+  if (config.transferOption.dirPerm) {
+    logger.info((config.transferOption.dryRun ? "would " : "") + "chmod remote directory as configured by dirPerm, dirPerm is: ", config.transferOption.dirPerm)
+    config.transferOption.dryRun || targetFs.chmod(targetFsPath, parseInt(String(config.transferOption.dirPerm), 8))
   }
 
   const fileEntries = await srcFs.list(srcFsPath);
@@ -113,7 +116,7 @@ async function transferFolder(
     )
   );
 
-  logger.info(`folder ${srcFsPath} transfered.`);
+  logger.info(`folder ${srcFsPath}${config.transferOption.dryRun ? " would have been" : ""} transfered.`);
 }
 
 async function transferFile(
@@ -426,7 +429,7 @@ async function _sync(
   };
 
   // create dir here so we don't have to ensure it for children files.
-  await targetFs.ensureDir(targetFsPath);
+  transferOption.dryRun || await targetFs.ensureDir(targetFsPath);
 
   const files = await Promise.all([
     srcFs.list(srcFsPath).catch(err => []).then(async entries => {

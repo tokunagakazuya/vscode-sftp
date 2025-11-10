@@ -34,6 +34,7 @@
   "sftp.command.syncLocalToRemote": "Sync Local -> Remote",
   "sftp.command.syncRemoteToLocal": "Sync Remote -> Local",
   "sftp.command.syncBoth": "Sync Both Directions",
+  "sftp.command.syncBothDryRun": "Sync Both Directions Dry Run",
   "sftp.command.diff": "Diff with Remote",
   "sftp.command.diffActiveFile": "Diff Active File with Remote",
   "sftp.command.list": "List",

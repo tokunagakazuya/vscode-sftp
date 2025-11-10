@@ -30,6 +30,8 @@ export interface TransferOption {
   // When uploading local -> remote, warn if the remote file
   // is newer than the local copy before overwriting it.
   warnOnNewerRemote?: boolean;
+  // during Sync Both Directions, do not perform any actual transfer
+  dryRun?: boolean;
 }
 
 export default class TransferTask implements Task {
@@ -157,6 +159,7 @@ export default class TransferTask implements Task {
       useTempFile,
       openSsh,
       fallbackMode,
+      dryRun,
       atime,
       mtime,
       filePerm
@@ -167,54 +170,56 @@ export default class TransferTask implements Task {
     let uploadFd; // Temp file or destination file when no temp file is used
     const uploadTarget = target + (useTempFile ? ".new" : "");
 
-    // Use mode first.
-    // Then check perserveTargetMode and fallback to fallbackMode if fail to get mode of target
-    if (mode === undefined && perserveTargetMode) {
-      if (useTempFile) {
-        [targetFd, uploadFd] = await Promise.all([
-          targetFs.open(target, 'r')  // Get handle for reading the target mode
-            .catch(() => null), // Return null if target file doesn't exist
-          targetFs.open(uploadTarget, 'w')  // Get handle for the file upload
-        ]);
-      } else {
-        targetFd = uploadFd = await targetFs.open(uploadTarget, 'w');
-      }
-
-      if (targetFd) {
-        [this._handle, mode] = await Promise.all([
-          srcFs.get(src),
-          targetFs
-            .fstat(targetFd)
-            .then(stat => stat.mode)
-            .catch(() => fallbackMode),
-        ]);
-
+    if (!dryRun) {
+      // Use mode first.
+      // Then check perserveTargetMode and fallback to fallbackMode if fail to get mode of target
+      if (mode === undefined && perserveTargetMode) {
         if (useTempFile) {
-          targetFs.close(targetFd);
+          [targetFd, uploadFd] = await Promise.all([
+            targetFs.open(target, 'r')  // Get handle for reading the target mode
+              .catch(() => null), // Return null if target file doesn't exist
+            targetFs.open(uploadTarget, 'w')  // Get handle for the file upload
+          ]);
+        } else {
+          targetFd = uploadFd = await targetFs.open(uploadTarget, 'w');
+        }
+
+        if (targetFd) {
+          [this._handle, mode] = await Promise.all([
+            srcFs.get(src),
+            targetFs
+              .fstat(targetFd)
+              .then(stat => stat.mode)
+              .catch(() => fallbackMode),
+          ]);
+
+          if (useTempFile) {
+            targetFs.close(targetFd);
+          }
+
+        } else {
+          this._handle = await srcFs.get(src);
+          mode = fallbackMode;
         }
 
       } else {
-        this._handle = await srcFs.get(src);
-        mode = fallbackMode;
+        [this._handle, uploadFd] = await Promise.all([
+          srcFs.get(src),
+          targetFs.open(uploadTarget, 'w'),
+        ]);
       }
-
-    } else {
-      [this._handle, uploadFd] = await Promise.all([
-        srcFs.get(src),
-        targetFs.open(uploadTarget, 'w'),
-      ]);
     }
 
     try {
       if (useTempFile) {
-        logger.info("uploading temp file: " + uploadTarget);
+        logger.info((dryRun ? "would upload" : "uploading") + " temp file: " + uploadTarget);
       }
-      await targetFs.put(this._handle, uploadTarget, {
+      dryRun || await targetFs.put(this._handle, uploadTarget, {
         mode,
         fd: uploadFd,
         autoClose: false,
       });
-      if (atime && mtime) {
+      if (!dryRun && atime && mtime) {
         try {
           await targetFs.futimes(
             uploadFd,
@@ -232,21 +237,25 @@ export default class TransferTask implements Task {
       }
 
       if (useTempFile) {
-        logger.info("moving from: " + target + ".new" + " to: " + target);
-        if(openSsh) {
-          await targetFs.renameAtomic(uploadTarget, target);
+        if (dryRun) {
+          logger.info("would move from: " + target + ".new" + " to: " + target);
         } else {
-          try {
-            await targetFs.unlink(target);
-          } catch(error) {
-            // Just ignore
+          logger.info("moving from: " + target + ".new" + " to: " + target);
+          if (openSsh) {
+            await targetFs.renameAtomic(uploadTarget, target);
+          } else {
+            try {
+              await targetFs.unlink(target);
+            } catch (error) {
+              // Just ignore
+            }
+            await targetFs.rename(uploadTarget, target);
           }
-          await targetFs.rename(uploadTarget, target);
         }
       }
 
     } finally {
-      await targetFs.close(uploadFd);
+      dryRun || await targetFs.close(uploadFd);
     }
   }
 }
