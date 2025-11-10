@@ -999,7 +999,6 @@
     ],
     "testPathIgnorePatterns": [
       "<rootDir>/_debug/"
-    ],
-    "watch": true
+    ]
   }
 }
