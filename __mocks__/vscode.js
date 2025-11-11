@@ -39,8 +39,13 @@ vscode.window.createOutputChannel = () => {
 			//
 			//  6: at Generator.next (<anonymous>)
 			//  7: at fulfilled (C:\Users\bruno\Projects\vscode-sftp-2\src\core\transferTask.ts:5:58)
-			let LOCATION_LINE_INDEX = 5;
-			const locationLine = (new Error).stack?.split('\n')[LOCATION_LINE_INDEX];
+			//
+			// The location line is right after consecutive lines containing "at VSCodeLogger."
+			let LOCATION_LINE_INDEX = 0;
+			const stack = (new Error).stack?.split('\n');
+			do { LOCATION_LINE_INDEX++ } while (LOCATION_LINE_INDEX < stack.length && !stack[LOCATION_LINE_INDEX].includes("at VSCodeLogger."));
+			do { LOCATION_LINE_INDEX++ } while (LOCATION_LINE_INDEX < stack.length && stack[LOCATION_LINE_INDEX].includes("at VSCodeLogger."));
+			const locationLine = stack[LOCATION_LINE_INDEX < stack.length ? LOCATION_LINE_INDEX : stack.length - 1];
 
 			// get workspace dir to transform paths to relative
 			// this will allow displaying shorter paths and have vscode debug console highlight links to the files
@@ -50,11 +55,13 @@ vscode.window.createOutputChannel = () => {
 			//  at TransferTask.<anonymous> (C:\Users\bruno\Projects\vscode-sftp-2\src\core\transferTask.ts:160:34)
 			// or
 			//  at C:\Users\bruno\Projects\vscode-sftp-2\src\fileHandlers\transfer\transfer.ts:129:34
-			const location = '.' + path.sep + path.relative(workspaceDir, locationLine && locationLine.includes('(')
-				? locationLine.replace(/^[^(]+\((.*)\)$/, '$1').replaceAll('/', '\\')
-				: locationLine.replace(/^ +at +/, '')
-			);
-			const f = locationLine && locationLine.includes('(') ? locationLine.split(/ +/).slice(2, 3) : '';
+			const location =
+				'.' + path.sep + path.relative(workspaceDir,
+					locationLine.includes('(')
+						? locationLine.replace(/^[^(]+\((.*)\)$/, '$1').replaceAll('/', '\\')
+						: locationLine.replace(/^ +at +/, ''))
+				;
+			const f = locationLine.includes('(') ? locationLine.split(/ +/).slice(2, 3) : '';
 
 			const msgs = msg.split(' ');
 
@@ -66,14 +73,30 @@ vscode.window.createOutputChannel = () => {
 if (!global.vscode) {
 	// we are running outside of vscode, hence we need to emulate some missing functions
 
-	vscode.Uri.file = (fsPath) => ({
-		scheme: 'file',
-		path: fsPath,
-		fsPath: fsPath,
-		query: '',
-		fragment: '',
-		toString: () => fsPath,
-	});
+	class Uri { }
+	vscode.Uri = Uri.prototype.constructor;
+
+	vscode.Uri.file = (fsPath) => {
+		let uri = new Uri();
+		uri.scheme = 'file';
+		uri.path = fsPath;
+		uri.fsPath = fsPath.replaceAll('/', '\\');
+		uri.query = '';
+		uri.fragment = '';
+		uri.toString = () => fsPath;
+
+		return uri;
+	};
+
+	vscode.Uri.parse = (uriString) => {
+		const re = /^([a-zA-Z]+):\/\/(\/{0,3})([^\/\?#]+)([^\?#]*)?(\?[^#]*)?(#.*)?$/;
+		const match = re.exec(uriString);
+		const uri = vscode.Uri.file(match[4]);
+		uri.scheme = match[1];
+		uri.query = match[5] ? decodeURIComponent(match[5].substring(1)) : '';
+		return uri;
+	}
+
 
 	class RelativePattern {
 		constructor(base, pattern) {
@@ -82,6 +105,15 @@ if (!global.vscode) {
 		}
 	}
 	vscode.RelativePattern = RelativePattern.prototype.constructor;
+}
+
+// force printDebugLog to true for tests
+vscode.workspace.getConfiguration = (section, resource) => {
+	if (section === EXTENSION_NAME) {
+		return {
+			printDebugLog: true
+		};
+	}
 }
 
 class mockedFSWatcher {
@@ -101,10 +133,10 @@ class mockedFSWatcher {
 				if (!vol.existsSync(uri.fsPath)) {
 					if (!ignoreDeleteEvents) this.deleteListener(uri);
 				} else {
-					// we cannot detect if it's a creation or a change, but anyway, in the app we bind the change and create events
-					// to the same callback, so...
-					if (!ignoreChangeEvents) this.changeListener(uri);
+					if (!ignoreCreateEvents) this.createListener(uri);
 				}
+			} else if (eventType === 'change') {
+				if (!ignoreChangeEvents) this.changeListener(uri);
 			}
 		});
 	}
@@ -136,6 +168,7 @@ vscode.workspace.createFileSystemWatcher = createFileSystemWatcher;
 
 // side effect: add fake remoteExplorer to app
 const app = require('../src/app');
+const { EXTENSION_NAME } = require('../src/constants');
 app.default.remoteExplorer = {
 	refresh: () => { }
 };
