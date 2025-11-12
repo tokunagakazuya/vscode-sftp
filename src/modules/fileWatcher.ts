@@ -59,6 +59,16 @@ function uploadHandler(uri: vscode.Uri) {
     return;
   }
 
+  // further to debounce, look in current uploadQueue if we have already planned to upload the file
+  // 
+  // Note: possibly maybe we should see how to handle the case where this is already an uploading task for this file ?
+  // - cancel the existing not running tasks and add a new one in uploadQueue?
+  // - also maybe we should have a look at the scheduler to make sure 2 tasks on the same file cannot run in parallel
+  if (Array.from(uploadQueue).some(u => u.fsPath === uri.fsPath)) {
+    // file is already planned to be uploaded, ignore
+    return;
+  }
+
   const currentDownloadTasks = getRunningTransformTasks().filter(
     task => task.transferType === TransferDirection.REMOTE_TO_LOCAL
   );
