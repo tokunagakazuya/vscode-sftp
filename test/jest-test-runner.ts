@@ -33,7 +33,7 @@ const jestConfig = {
         ],
     runInBand: true, // Required due to the way the "vscode" module is injected.
     testEnvironment: fromRoot('test/jest-vscode-environment.ts'),
-    //watchAll: true,
+    watchAll: true,
 } as Argv;
 
 // force colors in chalk (through module supports-color). Must be used together with a customer reporter to restore "normal" colors in Debug Console
