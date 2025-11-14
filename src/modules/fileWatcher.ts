@@ -120,28 +120,30 @@ function createWatcher(
   );
   addWatcher(watcherBase, watcher);
 
-  if (watcherConfig.autoUpload) {
-
-    function checkIgnoredAndUploadHandler(uri: vscode.Uri) {
+  function checkIgnoredAndUploadHandler(handler: (uri: vscode.Uri) => void) {
+    return (uri: vscode.Uri) => {
       if (watcherConfig.ignore && watcherConfig.ignore(uri.fsPath)) {
         return;
       }
-      uploadHandler(uri);
+      handler(uri);
     }
+  }
 
-    watcher.onDidCreate(checkIgnoredAndUploadHandler);
-    watcher.onDidChange(checkIgnoredAndUploadHandler);
+  if (watcherConfig.autoUpload) {
+
+    watcher.onDidCreate(checkIgnoredAndUploadHandler(uploadHandler));
+    watcher.onDidChange(checkIgnoredAndUploadHandler(uploadHandler));
   }
 
   if (watcherConfig.autoDelete) {
-    watcher.onDidDelete(uri => {
+    watcher.onDidDelete(checkIgnoredAndUploadHandler(uri => {
       if (!isValidFile(uri)) {
         return;
       }
 
       deleteQueue.add(uri);
       debouncedDelete();
-    });
+    }));
   }
 }
 
