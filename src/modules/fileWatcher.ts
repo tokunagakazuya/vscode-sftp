@@ -45,8 +45,17 @@ function doDelete() {
     try {
       await removeRemote(uri);
     } catch (error) {
-      logger.error(error, `remove ${fspath}`);
-      app.sftpBarItem.updateStatus(StatusBarItem.Status.error);
+      if (error.message.includes('ENOENT')) {
+        // No such file
+        // In the case of deletion of files and folders, no task is created, no task is registered in the pendingTasks list.
+        // The deletion is performed "immediately", i.e. in doDelete function.
+        // Hence, the deletion triggered by the watcher due to the sync deletion cannot be avoided 
+        // as opposed to what is done in upload functions.
+        // TODO: maybe refactor the deletion to be task based too?
+      } else {
+        logger.info(error, `remove ${fspath}`, error.message);
+        app.sftpBarItem.updateStatus(StatusBarItem.Status.error);
+      }
     }
   });
 }
