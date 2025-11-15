@@ -1,7 +1,6 @@
 jest.mock('fs');
 
 import { vol } from 'memfs';
-import * as fs from 'fs';
 import * as path from 'path';
 import { sync, TransferDirection } from '../transfer';
 import localFs from '../../../core/localFs';
@@ -11,6 +10,8 @@ import RemoteFs from '../../../../test/helper/localRemoteFs';
 import { log, error } from "console";
 import { LocalFileSystem } from '../../../core';
 import LocalRemoteFileSystem from '../../../../test/helper/localRemoteFs';
+
+import fillFs, { file } from '../../../../test/helper/fillFs';
 
 // restore console log and error to its original implementation to avoid jest decorations
 console.log = log;
@@ -48,52 +49,14 @@ async function runTasks(tasks: TransferTask[]) {
   );
 }
 
-const file = (c, time = 0) => ({
-  $$type: 'file',
-  content: c,
-  mtime: new Date(new Date().getTime() + time * 1000),
-});
-
-const fillFs = obj => {
-  const files: { [x: string]: string } = {};
-  const dirs: string[] = [];
-  const stats: {
-    [x: string]: {
-      mtime: Date;
-    };
-  } = {};
-  const processDirTree = (obj1, filepath = '/') => {
-    const keys = Object.keys(obj1);
-    if (keys.length <= 0) {
-      dirs.push(filepath);
-      return;
-    }
-
-    keys.forEach(key => {
-      const fullpath = path.join(filepath, key);
-      if (obj1[key].$$type === 'file') {
-        files[fullpath] = obj1[key].content;
-        stats[fullpath] = obj1[key];
-      } else {
-        processDirTree(obj1[key], fullpath);
-      }
-    });
-  };
-  processDirTree(obj);
-  vol.fromJSON(files, '/');
-  dirs.forEach(dir => fs.mkdirSync(dir));
-  Object.keys(stats).forEach(filepath => {
-    fs.utimesSync(filepath, stats[filepath].mtime, stats[filepath].mtime);
-  });
-};
 const mapList = (list: any[], key: string) => list.map(t => t[key]);
 
 describe('transfer algorithm', () => {
-  describe('sync', () => {
-    afterEach(() => {
-      vol.reset();
-    });
 
+  afterEach(() => {
+    vol.reset();
+  });
+  describe('sync', () => {
     test('sync', async () => {
       fillFs({
         local: {
