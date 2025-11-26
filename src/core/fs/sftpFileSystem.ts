@@ -7,6 +7,7 @@ import FileSystem, {
 } from './fileSystem';
 import RemoteFileSystem from './remoteFileSystem';
 import { SSHClient } from '../remote-client';
+import logger from '../../logger';
 
 type FileHandle = Buffer;
 
@@ -57,7 +58,7 @@ export default class SFTPFileSystem extends RemoteFileSystem {
 
   lstat(path: string): Promise<FileStats> {
     return new Promise((resolve, reject) => {
-      this.sftp.lstat(path, (err, stat) => {
+      this.retryOnSftpFailureWrapper(this.sftp.lstat)(path, (err, stat) => {
         if (err) {
           reject(err);
           return;
@@ -70,7 +71,7 @@ export default class SFTPFileSystem extends RemoteFileSystem {
 
   stat(path: string): Promise<FileStats> {
     return new Promise((resolve, reject) => {
-      this.sftp.stat(path, (err, stat) => {
+      this.retryOnSftpFailureWrapper(this.sftp.stat)(path, (err, stat) => {
         if (err) {
           reject(err);
           return;
@@ -87,7 +88,7 @@ export default class SFTPFileSystem extends RemoteFileSystem {
     mode?: number
   ): Promise<SFTPFileDescriptor> {
     return new Promise((resolve, reject) => {
-      this.sftp.open(path, flags, mode, (err, handle) => {
+      this.retryOnSftpFailureWrapper(this.sftp.open)(path, flags, mode, (err, handle) => {
         if (err) {
           return reject(err);
         }
@@ -102,7 +103,7 @@ export default class SFTPFileSystem extends RemoteFileSystem {
 
   close(fd: SFTPFileDescriptor): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.sftp.close(fd.handle, err => {
+      this.retryOnSftpFailureWrapper(this.sftp.close)(fd.handle, err => {
         if (err) {
           reject(err);
           return;
@@ -115,12 +116,12 @@ export default class SFTPFileSystem extends RemoteFileSystem {
 
   fstat(fd: SFTPFileDescriptor): Promise<FileStats> {
     return new Promise((resolve, reject) => {
-      this.sftp.fstat(fd.handle, (err, stat) => {
+      this.retryOnSftpFailureWrapper(this.sftp.fstat)(fd.handle, (err, stat) => {
         if (err) {
           // Try stat() for sftp servers that may not support fstat() for
           // whatever reason
           // see WriteStream.prototype.open in ssh2-streams.
-          this.sftp.stat(fd.path, (_err, _stat) => {
+          this.retryOnSftpFailureWrapper(this.sftp.stat)(fd.path, (_err, _stat) => {
             if (_err) {
               reject(err);
               return;
@@ -138,7 +139,7 @@ export default class SFTPFileSystem extends RemoteFileSystem {
 
   futimes(fd: SFTPFileDescriptor, atime: number, mtime: number): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.sftp.futimes(
+      this.retryOnSftpFailureWrapper(this.sftp.futimes)(
         fd.handle,
         this.toRemoteTimeInSecnonds(atime),
         this.toRemoteTimeInSecnonds(mtime),
@@ -156,7 +157,7 @@ export default class SFTPFileSystem extends RemoteFileSystem {
 
   fchmod(fd: SFTPFileDescriptor, mode: number): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.sftp.fchmod(fd.handle, mode, err => {
+      this.retryOnSftpFailureWrapper(this.sftp.fchmod)(fd.handle, mode, err => {
         if (err) {
           // Try chmod() for sftp servers that may not support fchmod() for
           // whatever reason
@@ -179,8 +180,8 @@ export default class SFTPFileSystem extends RemoteFileSystem {
 
   async chmod(path: string, mode: number): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.sftp.chmod(path, mode, err => {
-        if(err) {
+      this.retryOnSftpFailureWrapper(this.sftp.chmod)(path, mode, err => {
+        if (err) {
           reject(err)
           return
         }
@@ -204,7 +205,7 @@ export default class SFTPFileSystem extends RemoteFileSystem {
 
   rename(srcPath: string, destPath: string): Promise<void> {
     return new Promise((resolve, reject) => {
-      this.sftp.rename(srcPath, destPath, err => {
+      this.retryOnSftpFailureWrapper(this.sftp.rename)(srcPath, destPath, err => {
         if (err) {
           return reject(err);
         }
@@ -252,7 +253,7 @@ export default class SFTPFileSystem extends RemoteFileSystem {
 
   readlink(path: string): Promise<string> {
     return new Promise((resolve, reject) => {
-      this.sftp.readlink(path, (err, linkString) => {
+      this.retryOnSftpFailureWrapper(this.sftp.readlink)(path, (err, linkString) => {
         if (err) {
           reject(err);
           return;
@@ -265,7 +266,7 @@ export default class SFTPFileSystem extends RemoteFileSystem {
 
   symlink(targetPath: string, path: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.sftp.symlink(targetPath, path, err => {
+      this.retryOnSftpFailureWrapper(this.sftp.symlink)(targetPath, path, err => {
         if (err) {
           reject(err);
         }
@@ -276,7 +277,7 @@ export default class SFTPFileSystem extends RemoteFileSystem {
 
   mkdir(dir: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.sftp.mkdir(dir, err => {
+      this.retryOnSftpFailureWrapper(this.sftp.mkdir)(dir, err => {
         if (err) {
           reject(err);
           return;
@@ -329,7 +330,7 @@ export default class SFTPFileSystem extends RemoteFileSystem {
 
   list(dir: string, { showHiddenFiles = true } = {}): Promise<FileEntry[]> {
     return new Promise((resolve, reject) => {
-      this.sftp.readdir(dir, (err, result) => {
+      this.retryOnSftpFailureWrapper(this.sftp.readdir)(dir, async (err, result) => {
         if (err) {
           reject(err);
           return;
@@ -345,7 +346,7 @@ export default class SFTPFileSystem extends RemoteFileSystem {
 
   unlink(path: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.sftp.unlink(path, err => {
+      this.retryOnSftpFailureWrapper(this.sftp.unlink)(path, err => {
         if (err) {
           reject(err);
           return;
@@ -359,7 +360,7 @@ export default class SFTPFileSystem extends RemoteFileSystem {
   rmdir(path: string, recursive: boolean): Promise<void> {
     return new Promise<void>((resolve, reject) => {
       if (!recursive) {
-        this.sftp.rmdir(path, err => {
+        this.retryOnSftpFailureWrapper(this.sftp.rmdir)(path, err => {
           if (err) {
             reject(err);
             return;
@@ -420,5 +421,58 @@ export default class SFTPFileSystem extends RemoteFileSystem {
       });
       input.pipe(writer);
     });
+  }
+
+  /**
+   * Wrapper to retry when SFTP status is 'Failure'.
+   * 
+   * SFTP sometimes and randomly returns a Failure status, which indicate an error on the server side, without being more explicit.
+   * Such a behaviour is very difficult to investigate on the server. 
+   * The issue has been observed on readdir. It seems it happens when a lot of requests are executing.
+   * 
+   * This wrapper tends to compensate for this, retrying the request a number of times, giving the opportunity to eventually succeed.
+   * Despite only observed on readdir, all sftp functions have been wrapped in the above.
+   * 
+   * Example of use: 
+   * replace:
+   *    this.sftp.readdir(dir, (err, result) => {});
+   * by:
+   *    this.retryIfSftpFailureWrapper(this.sftp.readdir)(dir, (err, result) => {});
+   * 
+   * @param func the sftp function to wrap
+   * 
+   */
+  retryOnSftpFailureWrapper<T extends Function>(func: T): T {
+
+    // func should be a method of this.sftp - could maybe be checked with type constraints when sftp will be typed?
+    if (func !== this.sftp[func.name]) {
+      throw new Error(`${func.name} is not a method of "this.sftp"!`);
+    }
+
+    const MAXRETRIES = 10;
+    let count = 0;
+
+    const _retryFunc = (...args: any[]) => {
+      const startArgs = args.slice(0, -1);
+      const callback = args[args.length - 1];
+
+      func.call(this.sftp, ...startArgs, async (err, result) => {
+        if (err && err.message === 'Failure') {
+          count++;
+          if (count > MAXRETRIES) {
+            logger.error(`${func.name} got 'Failure' error with args "${startArgs}", retried ${count} times...`)
+            return callback(err, result);
+          }
+          logger.debug(`${func.name} got 'Failure' error with args "${startArgs}", will retry in 1 sec (count=${count})...`)
+          await new Promise((resolve, reject) => { setTimeout(resolve, 1000) });
+          return _retryFunc(...args);
+        }
+        callback(err, result);
+      });
+
+    }
+
+    return <any>_retryFunc;
+
   }
 }
