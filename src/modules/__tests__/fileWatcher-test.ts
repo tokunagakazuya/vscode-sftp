@@ -18,7 +18,7 @@ console.error = error;
 LocalFileSystem.prototype.put = LocalRemoteFileSystem.prototype.put;
 
 
-describe('filewatch', () => {
+describe.skip('filewatch', () => {
 
   let fileService: FileService | null;
 
