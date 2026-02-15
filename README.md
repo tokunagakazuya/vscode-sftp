@@ -2,8 +2,26 @@
 
 This plugin is an update of [SFTP](https://marketplace.visualstudio.com/items?itemName=Natizyskunk.sftp) by [@tokunagakazuya](https://github.com/tokunagakazuya). To bring the user experience closer to JetBrains IDEs (PhpStorm, WebStorm), the following modifications were made:
 
-- Save directly opened remote files with overwrite  
-- Expanded menu in the remote explorer  
+- (new) Save directly opened remote files with overwrite  
+- (new) Expanded menu in the remote explorer  
+- (fix) Many fixes in FileWatcher
+  - Was sometimes uploading files twice, creating File Not Found errors when useTempFile=true
+  - Was not respecting ignore settings in case of directory deletion
+  - Was throwing NOENT No such file, when syncing a removed folder
+  - Respecting ignore files (global ignore file and watcher.ignore)
+  - Stopped triggering upload of file to remote when local file is updated from remote
+- (fix) sync both directions
+- (fix) SFTP 'Failure' errors were occurring randomly when reading directories. Might fix:
+  - [#503](https://github.com/Natizyskunk/vscode-sftp/issues/503)
+  - [#527](https://github.com/Natizyskunk/vscode-sftp/issues/527)
+- (fix) better handling of symbolic links
+- (dev) Many fixes and improvements to the test framework:
+  - Repaired Launch Tests task
+  - vscode mock
+  - npm task
+  - Repaired Jest
+
+---
 
 Please note that some of the features of [@satiromarra](https://marketplace.visualstudio.com/items?itemName=satiromarra.code-sftp), which offers the most feature-rich implementation, are not available.
 
