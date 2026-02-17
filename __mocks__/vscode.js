@@ -80,7 +80,7 @@ if (!global.vscode) {
 		let uri = new Uri();
 		uri.scheme = 'file';
 		uri.path = fsPath;
-		uri.fsPath = fsPath.replaceAll('/', '\\');
+		uri.fsPath = fsPath.replaceAll('/', path.sep);
 		uri.query = '';
 		uri.fragment = '';
 		uri.toString = () => fsPath;
@@ -124,10 +124,15 @@ class mockedFSWatcher {
 
 	constructor(globPattern, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents) {
 		const root = globPattern.base.replace(/\\/g, '/');
+		log('globPattern.base:', globPattern.base);
+		log('watch root:', root);
 		this.watcher = vol.watch(root, { persistent: false, recursive: true }, (eventType, filename) => {
 
+			log('watch triggered:', filename);
 			const fsPath = root + '/' + filename;
+			log('fsPath:', fsPath);
 			const uri = vscode.Uri.file(fsPath);
+			log('uri:', uri);
 
 			if (eventType === 'rename') {
 				if (!vol.existsSync(uri.fsPath)) {

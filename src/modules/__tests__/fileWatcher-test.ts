@@ -9,6 +9,7 @@ import LocalRemoteFileSystem from '../../../test/helper/localRemoteFs';
 
 import prepareTest from '../../../test/helper/prepareTest';
 import { file } from '../../../test/helper/fillFs';
+import path = require('path');
 
 // restore console log and error to its original implementation to avoid jest decorations
 console.log = log;
@@ -207,9 +208,9 @@ describe('filewatch', () => {
 
     expect(logLines.join('\n')).not.toMatch("Error: E");
     expect(sortedUniqArrowLines).toEqual([
-      "local ➞ remote \\local\\c\\newfile",
+      `local ➞ remote ${path.normalize('/local/c/newfile')}`,
     ]);
-    expect(logLines).toContain("folder \\local\\c\\d\\newdir transfered.");
+    expect(logLines).toContain(`folder ${path.normalize("/local/c/d/newdir")} transfered.`);
   });
   test('watch - create local link/dirlink', async () => {
     const fileTree = {
@@ -258,8 +259,8 @@ describe('filewatch', () => {
     expect(fs.statSync('/remote/c/d/linktod').isDirectory()).toBe(true);
 
     // use toTree because toJSON does not display links
-    expect(sortTree(vol.toTree())).toEqual(sortTree(`\\
-├─ \\local/
+    expect(sortTree(vol.toTree({ separator: '/' }))).toEqual(sortTree(`/
+├─ local/
 │  ├─ a
 │  ├─ b
 │  └─ c/
@@ -271,7 +272,7 @@ describe('filewatch', () => {
 │        ├─ d-b
 │        ├─ linktoa → /local/a
 │        └─ linktod → /local/c/d
-└─ \\remote/
+└─ remote/
    ├─ a
    ├─ b
    └─ c/
@@ -287,8 +288,8 @@ describe('filewatch', () => {
 
     expect(logLines.join('\n')).not.toMatch("Error: E");
     expect(sortedUniqArrowLines).toEqual([
-      "local ➞ remote \\local\\c\\d\\linktoa",
-      "local ➞ remote \\local\\c\\d\\linktod",
+      `local ➞ remote ${path.normalize("/local/c/d/linktoa")}`,
+      `local ➞ remote ${path.normalize("/local/c/d/linktod")}`,
     ]);
   });
   test('watch - update local file', async () => {
@@ -345,7 +346,7 @@ describe('filewatch', () => {
 
     expect(logLines.join('\n')).not.toMatch("Error: E");
     expect(sortedUniqArrowLines).toEqual([
-      "local ➞ remote \\local\\c\\c-b",
+      `local ➞ remote ${path.normalize("/local/c/c-b")}`,
     ]);
   });
   test('watch - delete local file/dir', async () => {
@@ -398,8 +399,8 @@ describe('filewatch', () => {
 
     expect(logLines.join('\n')).not.toMatch("Error: E");
     expect(logLines.filter(l => l.includes("[watcher/"))).toEqual([
-      "[watcher/removed] \\local\\c\\c-c",
-      "[watcher/removed] \\local\\c\\d"
+      `[watcher/removed] ${path.normalize("/local/c/c-c")}`,
+      `[watcher/removed] ${path.normalize("/local/c/d")}`
     ]);
   });
   test('watch - ignore file/dir', async () => {
@@ -516,10 +517,10 @@ describe('filewatch', () => {
     });
 
     expect(sortedUniqArrowLines).toEqual([
-      "local ➞ remote \\local\\c\\c-b",
-      "local ➞ remote \\local\\c\\newfile",
+      `local ➞ remote ${path.normalize("/local/c/c-b")}`,
+      `local ➞ remote ${path.normalize("/local/c/newfile")}`,
     ]);
-    expect(logLines).toContain("folder \\local\\c\\d\\newdir transfered.");
+    expect(logLines).toContain(`folder ${path.normalize("/local/c/d/newdir")} transfered.`);
   });
   test('watch - global ignore file/dir', async () => {
     const remoteFileTree = {
@@ -636,10 +637,10 @@ describe('filewatch', () => {
     });
 
     expect(sortedUniqArrowLines).toEqual([
-      "local ➞ remote \\local\\c\\c-b",
-      "local ➞ remote \\local\\c\\newfile",
+      `local ➞ remote ${path.normalize("/local/c/c-b")}`,
+      `local ➞ remote ${path.normalize("/local/c/newfile")}`,
     ]);
-    expect(logLines).toContain("folder \\local\\c\\d\\newdir transfered.");
+    expect(logLines).toContain(`folder ${path.normalize("/local/c/d/newdir")} transfered.`);
   });
   test('watch - update local link to (un)watched file', async () => {
     const fileTree = {
@@ -683,8 +684,8 @@ describe('filewatch', () => {
         fs.symlinkSync("/remote/c/ignore_e/e-a", "/remote/c/d/linkto_unwatched_e-a");
 
         // use toTree because toJSON does not display links
-        expect(sortTree(vol.toTree() + '\n')).toEqual(sortTree(`\\
-├─ \\local/
+        expect(sortTree(vol.toTree({ separator: '/' }) + '\n')).toEqual(sortTree(`/
+├─ local/
 │  ├─ a
 │  ├─ b
 │  └─ c/
@@ -698,7 +699,7 @@ describe('filewatch', () => {
 │     │  └─ linkto_unwatched_e-a → /local/c/ignore_e/e-a
 │     └─ ignore_e/
 │        └─ e-a
-└─ \\remote/
+└─ remote/
    ├─ a
    ├─ b
    └─ c/
@@ -712,8 +713,8 @@ describe('filewatch', () => {
       │  └─ linkto_unwatched_e-a → /remote/c/ignore_e/e-a
       └─ ignore_e/
          └─ e-a
-`
-        ));
+`)
+        );
       },
       () => {
         // change watched target 
@@ -735,8 +736,8 @@ describe('filewatch', () => {
     expect(fs.statSync('/remote/c/d/linkto_unwatched_e-a').isFile()).toBe(true);
 
     // use toTree because toJSON does not display links
-    expect(sortTree(vol.toTree() + '\n')).toEqual(sortTree(`\\
-├─ \\local/
+    expect(sortTree(vol.toTree({ separator: '/' }) + '\n')).toEqual(sortTree(`/
+├─ local/
 │  ├─ a
 │  ├─ b
 │  └─ c/
@@ -750,7 +751,7 @@ describe('filewatch', () => {
 │     │  └─ linkto_unwatched_e-a → /local/c/ignore_e/e-a
 │     └─ ignore_e/
 │        └─ e-a
-└─ \\remote/
+└─ remote/
    ├─ a
    ├─ b
    └─ c/
@@ -764,8 +765,8 @@ describe('filewatch', () => {
       │  └─ linkto_unwatched_e-a → /remote/c/ignore_e/e-a
       └─ ignore_e/
          └─ e-a
-`
-    ));
+`)
+    );
 
     expect(vol.toJSON()).toEqual({
       "/local/a": "changed a",
@@ -788,7 +789,7 @@ describe('filewatch', () => {
 
     expect(logLines.join('\n')).not.toMatch("Error: E");
     expect(sortedUniqArrowLines).toEqual([
-      "local ➞ remote \\local\\a",
+      `local ➞ remote ${path.normalize("/local/a")}`,
     ]);
   });
 });
