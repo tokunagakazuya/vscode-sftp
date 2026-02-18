@@ -18,123 +18,6 @@ console.error = error;
 // Use hacked 'put' from LocalRemoteFileSystem (not using createWritesStream) to avoid memfs stream close bug
 LocalFileSystem.prototype.put = LocalRemoteFileSystem.prototype.put;
 
-
-
-/**
- * Sort the elements of the tree
- *  
- * ...
- * ├─ local/
- * │  ├─ b   <= will be switched
- * │  ├─ a   <= 
- * │  └─ c/
- * │     ├─ c-a
- * ...
- * 
- * @param treeString 
- */
-function sortTree(treeString: string) {
-
-  type node = { [key: string]: 1 | node };
-
-  const tree: node = {};
-
-  const curbranch: string[] = []; // current branch
-
-  function getNode(branch: string[]): node {
-    let curnode: node = tree;
-    const keys: string[] = []; // kept for error logging
-    branch.forEach(key => {
-      keys.push[key];
-      const keynode = curnode[key];
-      if (typeof keynode === 'object') curnode = keynode;
-      else {
-        console.log(`Cannot get tree node for key "${keys}" (should not happen). Tree is:`, tree);
-        expect(false).toBe(true);
-      }
-    });
-    return curnode;
-  }
-
-  treeString
-    .replace(/^ *([│├└] +)*[│├└]─ /mg, str => ' '.repeat(str.length / 3)) // remove graphics
-    .split('\n')   // create an array of lines
-    .forEach(line => {
-
-      if (line.trim() === '') return;
-
-      // tree is like:
-      // {
-      //    "/": {
-      //            "a": 1,
-      //            "b": 1,
-      //            "c": 1,
-      //            "d/": {
-      //                   "e": 1
-      //                 },      
-      //         }
-      // }
-
-
-      // measure depth
-      let depth = 0;
-      while (line.substring(depth, depth + 1) === ' ') depth++;
-
-      // get file/dir name
-      const label = line.substring(depth);
-      const isDir = line.charAt(line.length - 1) === '/';
-
-      let parent: node; // the parent (to be identified)
-
-      if (depth === curbranch.length) {
-        // tree gets deeper
-
-        // add new dirname/filename to tree
-        parent = getNode(curbranch);
-        curbranch.push(label);
-      } else {
-        parent = getNode(curbranch.slice(0, depth));
-
-        if (depth === curbranch.length - 1) {
-          // new sibling
-
-          curbranch[depth] = label;
-
-        } else if (depth < curbranch.length - 1) {
-          // going up in tree
-
-          curbranch.splice(depth + 1);
-        } else {
-          // should not happen
-          console.log(`Cannot build tree (should not happen)!`);
-          console.log(`tree:`, tree);
-          console.log(`curbranch:`, curbranch);
-          console.log(`depth:`, depth);
-          console.log(`line:`, line);
-          console.log(`label:`, label);
-          console.log(`isDir:`, isDir);
-          console.log(`parent:`, parent);
-          expect(false).toBe(true);
-        }
-      }
-      parent[label] = isDir ? {} : 1;
-
-    });
-
-  function treeToString(tree: node, indent: string): string {
-    let s = '';
-    Object.keys(tree).sort().forEach(key => {
-      s += indent + key + '\n';
-      const keynode = tree[key];
-      if (typeof keynode === 'object') s += treeToString(keynode, indent + ' ');
-    });
-
-    return s;
-  }
-
-  return treeToString(tree, '');
-}
-
 describe('filewatch', () => {
 
   let fileService: FileService | null;
@@ -259,32 +142,32 @@ describe('filewatch', () => {
     expect(fs.statSync('/remote/c/d/linktod').isDirectory()).toBe(true);
 
     // use toTree because toJSON does not display links
-    expect(sortTree(vol.toTree({ separator: '/' }))).toEqual(sortTree(`/
+    expect(vol.toTree({ separator: '/', sort: true })).toEqual(`/
 ├─ local/
+│  ├─ c/
+│  │  ├─ d/
+│  │  │  ├─ d-a
+│  │  │  ├─ d-b
+│  │  │  ├─ linktoa → /local/a
+│  │  │  └─ linktod → /local/c/d
+│  │  ├─ c-a
+│  │  ├─ c-b
+│  │  └─ c-c
 │  ├─ a
-│  ├─ b
-│  └─ c/
-│     ├─ c-a
-│     ├─ c-b
-│     ├─ c-c
-│     └─ d/
-│        ├─ d-a
-│        ├─ d-b
-│        ├─ linktoa → /local/a
-│        └─ linktod → /local/c/d
+│  └─ b
 └─ remote/
+   ├─ c/
+   │  ├─ d/
+   │  │  ├─ d-a
+   │  │  ├─ d-b
+   │  │  ├─ linktoa → /local/a
+   │  │  └─ linktod → /local/c/d
+   │  ├─ c-a
+   │  ├─ c-b
+   │  └─ c-c
    ├─ a
-   ├─ b
-   └─ c/
-      ├─ c-a
-      ├─ c-b
-      ├─ c-c
-      └─ d/
-         ├─ d-a
-         ├─ d-b
-         ├─ linktoa → /local/a
-         └─ linktod → /local/c/d`
-    ));
+   └─ b`
+    );
 
     expect(logLines.join('\n')).not.toMatch("Error: E");
     expect(sortedUniqArrowLines).toEqual([
@@ -684,36 +567,36 @@ describe('filewatch', () => {
         fs.symlinkSync("/remote/c/ignore_e/e-a", "/remote/c/d/linkto_unwatched_e-a");
 
         // use toTree because toJSON does not display links
-        expect(sortTree(vol.toTree({ separator: '/' }) + '\n')).toEqual(sortTree(`/
+        expect(vol.toTree({ separator: '/', sort: true }) + '\n').toEqual(`/
 ├─ local/
+│  ├─ c/
+│  │  ├─ d/
+│  │  │  ├─ d-a
+│  │  │  ├─ d-b
+│  │  │  ├─ linkto_unwatched_e-a → /local/c/ignore_e/e-a
+│  │  │  └─ linkto_watched_a → /local/a
+│  │  ├─ ignore_e/
+│  │  │  └─ e-a
+│  │  ├─ c-a
+│  │  ├─ c-b
+│  │  └─ c-c
 │  ├─ a
-│  ├─ b
-│  └─ c/
-│     ├─ c-a
-│     ├─ c-b
-│     ├─ c-c
-│     ├─ d/
-│     │  ├─ d-a
-│     │  ├─ d-b
-│     │  ├─ linkto_watched_a → /local/a
-│     │  └─ linkto_unwatched_e-a → /local/c/ignore_e/e-a
-│     └─ ignore_e/
-│        └─ e-a
+│  └─ b
 └─ remote/
+   ├─ c/
+   │  ├─ d/
+   │  │  ├─ d-a
+   │  │  ├─ d-b
+   │  │  ├─ linkto_unwatched_e-a → /remote/c/ignore_e/e-a
+   │  │  └─ linkto_watched_a → /remote/a
+   │  ├─ ignore_e/
+   │  │  └─ e-a
+   │  ├─ c-a
+   │  ├─ c-b
+   │  └─ c-c
    ├─ a
-   ├─ b
-   └─ c/
-      ├─ c-a
-      ├─ c-b
-      ├─ c-c
-      ├─ d/
-      │  ├─ d-a
-      │  ├─ d-b
-      │  ├─ linkto_watched_a → /remote/a
-      │  └─ linkto_unwatched_e-a → /remote/c/ignore_e/e-a
-      └─ ignore_e/
-         └─ e-a
-`)
+   └─ b
+`
         );
       },
       () => {
@@ -736,37 +619,36 @@ describe('filewatch', () => {
     expect(fs.statSync('/remote/c/d/linkto_unwatched_e-a').isFile()).toBe(true);
 
     // use toTree because toJSON does not display links
-    expect(sortTree(vol.toTree({ separator: '/' }) + '\n')).toEqual(sortTree(`/
+    expect(vol.toTree({ separator: '/', sort: true }) + '\n').toEqual(`/
 ├─ local/
+│  ├─ c/
+│  │  ├─ d/
+│  │  │  ├─ d-a
+│  │  │  ├─ d-b
+│  │  │  ├─ linkto_unwatched_e-a → /local/c/ignore_e/e-a
+│  │  │  └─ linkto_watched_a → /local/a
+│  │  ├─ ignore_e/
+│  │  │  └─ e-a
+│  │  ├─ c-a
+│  │  ├─ c-b
+│  │  └─ c-c
 │  ├─ a
-│  ├─ b
-│  └─ c/
-│     ├─ c-a
-│     ├─ c-b
-│     ├─ c-c
-│     ├─ d/
-│     │  ├─ d-a
-│     │  ├─ d-b
-│     │  ├─ linkto_watched_a → /local/a
-│     │  └─ linkto_unwatched_e-a → /local/c/ignore_e/e-a
-│     └─ ignore_e/
-│        └─ e-a
+│  └─ b
 └─ remote/
+   ├─ c/
+   │  ├─ d/
+   │  │  ├─ d-a
+   │  │  ├─ d-b
+   │  │  ├─ linkto_unwatched_e-a → /remote/c/ignore_e/e-a
+   │  │  └─ linkto_watched_a → /remote/a
+   │  ├─ ignore_e/
+   │  │  └─ e-a
+   │  ├─ c-a
+   │  ├─ c-b
+   │  └─ c-c
    ├─ a
-   ├─ b
-   └─ c/
-      ├─ c-a
-      ├─ c-b
-      ├─ c-c
-      ├─ d/
-      │  ├─ d-a
-      │  ├─ d-b
-      │  ├─ linkto_watched_a → /remote/a
-      │  └─ linkto_unwatched_e-a → /remote/c/ignore_e/e-a
-      └─ ignore_e/
-         └─ e-a
-`)
-    );
+   └─ b
+`);
 
     expect(vol.toJSON()).toEqual({
       "/local/a": "changed a",
