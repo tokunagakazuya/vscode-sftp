@@ -124,15 +124,10 @@ class mockedFSWatcher {
 
 	constructor(globPattern, ignoreCreateEvents, ignoreChangeEvents, ignoreDeleteEvents) {
 		const root = globPattern.base.replace(/\\/g, '/');
-		log('globPattern.base:', globPattern.base);
-		log('watch root:', root);
 		this.watcher = vol.watch(root, { persistent: false, recursive: true }, (eventType, filename) => {
 
-			log('watch triggered:', filename);
 			const fsPath = root + '/' + filename;
-			log('fsPath:', fsPath);
 			const uri = vscode.Uri.file(fsPath);
-			log('uri:', uri);
 
 			if (eventType === 'rename') {
 				if (!vol.existsSync(uri.fsPath)) {
