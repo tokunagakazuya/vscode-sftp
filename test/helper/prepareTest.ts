@@ -8,14 +8,14 @@ import * as output from '../../src/ui/output';
 /**
  * Prepare test by:
  * - loading a config, 
- * - creating the source and target file structures,
+ * - creating the local and remote file structures,
  * - running some preparatory instructions (e.g. to complement the file structures)
  *   before the watcher is started
  * - running the watcher according to the config
  * - running additional instructions which are under the control of the watcher
  * @param config 
- * @param srcFileTree 
- * @param targetFileTree 
+ * @param local 
+ * @param remote 
  * @param beforeWatchInstructions 
  * @param watchedInstructions 
  * @returns 
@@ -27,11 +27,13 @@ import * as output from '../../src/ui/output';
  *   - arrowLines: [info] lines containing an arrow ➞ (file transfers)
  *   - calls: raw calls to output print function
  */
-const prepareTest = async (config: Partial<FileServiceConfig>,
-    srcFileTree: FileTree, targetFileTree: FileTree,
+const prepareTest = async (testConfig: {
+    config: Partial<FileServiceConfig>,
+    local: FileTree,
+    remote: FileTree,
     beforeWatchInstructions?: () => void | Promise<void>,
     watchedInstructions?: () => void | Promise<void>,
-) => {
+}) => {
 
     const _waitUntilAllTransfersCompletedAndDispose = async () => {
         if (!fileService) return;
@@ -53,8 +55,8 @@ const prepareTest = async (config: Partial<FileServiceConfig>,
     }
 
     fillFs({
-        local: srcFileTree,
-        remote: targetFileTree,
+        local: testConfig.local,
+        remote: testConfig.remote,
     });
 
     const defaultConfig: Partial<FileServiceConfig> = {
@@ -85,14 +87,16 @@ const prepareTest = async (config: Partial<FileServiceConfig>,
         "openSsh": true
     }
 
-    beforeWatchInstructions && await beforeWatchInstructions();
+    testConfig.beforeWatchInstructions && await testConfig.beforeWatchInstructions();
 
-    const fileService = serviceManager.createFileService({ ...defaultConfig, ...config }, "/local");
+    testConfig.beforeWatchInstructions && await testConfig.beforeWatchInstructions();
+
+    const fileService = serviceManager.createFileService({ ...defaultConfig, ...testConfig.config }, "/local");
     const scheduler = fileService.createTransferScheduler(1);
     scheduler.add
     const outputSpy: jest.SpyInstance<void, string[]> = jest.spyOn(output, 'print');
 
-    watchedInstructions && await watchedInstructions();
+    testConfig.watchedInstructions && await testConfig.watchedInstructions();
 
     await _waitUntilAllTransfersCompletedAndDispose();
 

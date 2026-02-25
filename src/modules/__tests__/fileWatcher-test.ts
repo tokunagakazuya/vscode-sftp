@@ -46,26 +46,29 @@ describe('filewatch', () => {
       },
     };
     const { logLines, sortedUniqArrowLines } = await prepareTest({
-      "watcher": {
-        "files": "**/*",
-        "ignore": [],
-        "autoUpload": true,
-        "autoDelete": true
+      config: {
+        "watcher": {
+          "files": "**/*",
+          "ignore": [],
+          "autoUpload": true,
+          "autoDelete": true
+        },
+        "syncOption": {
+          "delete": true,
+          "update": true,
+          "skipCreate": false,
+          "ignoreExisting": false,
+        },
       },
-      "syncOption": {
-        "delete": true,
-        "update": true,
-        "skipCreate": false,
-        "ignoreExisting": false,
-      },
-    }, fileTree, fileTree,
-      undefined,
-      () => {
+      local: fileTree,
+      remote: fileTree,
+      watchedInstructions: () => {
         // create new file /local/c/newfile'
         fs.writeFileSync("/local/c/newfile", "newfile");
         // create new dir /local/d/newdir
         fs.mkdirSync("/local/c/d/newdir");
-      });
+      }
+    });
 
 
     expect(vol.toJSON()).toEqual({
@@ -110,26 +113,29 @@ describe('filewatch', () => {
       },
     };
     const { logLines, sortedUniqArrowLines } = await prepareTest({
-      "watcher": {
-        "files": "**/*",
-        "ignore": [],
-        "autoUpload": true,
-        "autoDelete": true
+      config: {
+        "watcher": {
+          "files": "**/*",
+          "ignore": [],
+          "autoUpload": true,
+          "autoDelete": true
+        },
+        "syncOption": {
+          "delete": true,
+          "update": true,
+          "skipCreate": false,
+          "ignoreExisting": false,
+        },
       },
-      "syncOption": {
-        "delete": true,
-        "update": true,
-        "skipCreate": false,
-        "ignoreExisting": false,
-      },
-    }, fileTree, fileTree,
-      undefined,
-      () => {
+      local: fileTree,
+      remote: fileTree,
+      watchedInstructions: () => {
         // create new link to file /local/c/d/d-c -> /local/a
         fs.symlinkSync("/local/a", "/local/c/d/linktoa");
         // create new link to dir /local/c/d/linktod -> /local/c/d
         fs.symlinkSync("/local/c/d", "/local/c/d/linktod");
-      });
+      }
+    });
 
     expect(fs.lstatSync('/local/c/d/linktoa').isSymbolicLink()).toBe(true);
     expect(fs.statSync('/local/c/d/linktoa').isFile()).toBe(true);
@@ -190,24 +196,27 @@ describe('filewatch', () => {
       },
     };
     const { logLines, sortedUniqArrowLines } = await prepareTest({
-      "watcher": {
-        "files": "**/*",
-        "ignore": [],
-        "autoUpload": true,
-        "autoDelete": true
+      config: {
+        "watcher": {
+          "files": "**/*",
+          "ignore": [],
+          "autoUpload": true,
+          "autoDelete": true
+        },
+        "syncOption": {
+          "delete": true,
+          "update": true,
+          "skipCreate": false,
+          "ignoreExisting": false,
+        },
       },
-      "syncOption": {
-        "delete": true,
-        "update": true,
-        "skipCreate": false,
-        "ignoreExisting": false,
-      },
-    }, fileTree, fileTree,
-      undefined,
-      () => {
+      local: fileTree,
+      remote: fileTree,
+      watchedInstructions: () => {
         // update file /local/c/newfile'
         fs.writeFileSync("/local/c/c-b", "changed c-b");
-      });
+      }
+    });
 
 
     expect(vol.toJSON()).toEqual({
@@ -247,26 +256,29 @@ describe('filewatch', () => {
       },
     };
     const { logLines } = await prepareTest({
-      "watcher": {
-        "files": "**/*",
-        "ignore": [],
-        "autoUpload": true,
-        "autoDelete": true
+      config: {
+        "watcher": {
+          "files": "**/*",
+          "ignore": [],
+          "autoUpload": true,
+          "autoDelete": true
+        },
+        "syncOption": {
+          "delete": true,
+          "update": true,
+          "skipCreate": false,
+          "ignoreExisting": false,
+        },
       },
-      "syncOption": {
-        "delete": true,
-        "update": true,
-        "skipCreate": false,
-        "ignoreExisting": false,
-      },
-    }, fileTree, fileTree,
-      undefined,
-      () => {
+      local: fileTree,
+      remote: fileTree,
+      watchedInstructions: () => {
         // delete file 
         fs.rmSync("/local/c/c-c");
         // delete dir 
         fs.rmSync("/local/c/d", { recursive: true });
-      });
+      }
+    });
 
 
     expect(vol.toJSON()).toEqual({
@@ -326,24 +338,26 @@ describe('filewatch', () => {
       },
     };
     const { logLines, sortedUniqArrowLines } = await prepareTest({
-      "watcher": {
-        "files": "**/*",
-        "ignore": [
-          "ignored_f",
-          "present_but_ignored_h",
-        ],
-        "autoUpload": true,
-        "autoDelete": true
+      config: {
+        "watcher": {
+          "files": "**/*",
+          "ignore": [
+            "ignored_f",
+            "present_but_ignored_h",
+          ],
+          "autoUpload": true,
+          "autoDelete": true
+        },
+        "syncOption": {
+          "delete": true,
+          "update": true,
+          "skipCreate": false,
+          "ignoreExisting": false,
+        },
       },
-      "syncOption": {
-        "delete": true,
-        "update": true,
-        "skipCreate": false,
-        "ignoreExisting": false,
-      },
-    }, localFileTree, remoteFileTree,
-      undefined,
-      () => {
+      local: localFileTree,
+      remote: remoteFileTree,
+      watchedInstructions: () => {
         // create new file /local/c/newfile'
         fs.writeFileSync("/local/c/newfile", "newfile");
         // create new dir /local/d/newdir
@@ -366,7 +380,8 @@ describe('filewatch', () => {
         // delete ignored dir
         fs.rmdirSync("/local/present_but_ignored_h", { recursive: true });
 
-      });
+      }
+    });
 
 
     expect(vol.toJSON()).toEqual({
@@ -444,26 +459,28 @@ describe('filewatch', () => {
         }
       },
     }; const { logLines, sortedUniqArrowLines } = await prepareTest({
-      "watcher": {
-        "files": "**/*",
+      config: {
+        "watcher": {
+          "files": "**/*",
+          "ignore": [
+          ],
+          "autoUpload": true,
+          "autoDelete": true
+        },
+        "syncOption": {
+          "delete": true,
+          "update": true,
+          "skipCreate": false,
+          "ignoreExisting": false,
+        },
         "ignore": [
+          "ignored_f",
+          "present_but_ignored_h",
         ],
-        "autoUpload": true,
-        "autoDelete": true
       },
-      "syncOption": {
-        "delete": true,
-        "update": true,
-        "skipCreate": false,
-        "ignoreExisting": false,
-      },
-      "ignore": [
-        "ignored_f",
-        "present_but_ignored_h",
-      ],
-    }, localFileTree, remoteFileTree,
-      undefined,
-      () => {
+      local: localFileTree,
+      remote: remoteFileTree,
+      watchedInstructions: () => {
         // create new file /local/c/newfile'
         fs.writeFileSync("/local/c/newfile", "newfile");
         // create new dir /local/d/newdir
@@ -486,7 +503,8 @@ describe('filewatch', () => {
         // delete ignored dir
         fs.rmdirSync("/local/present_but_ignored_h", { recursive: true });
 
-      });
+      }
+    });
 
 
     expect(vol.toJSON()).toEqual({
@@ -543,22 +561,25 @@ describe('filewatch', () => {
       },
     };
     const { logLines, sortedUniqArrowLines } = await prepareTest({
-      "watcher": {
-        "files": "**/*",
-        "ignore": [
-          'ignore_e'
-        ],
-        "autoUpload": true,
-        "autoDelete": true
+      config: {
+        "watcher": {
+          "files": "**/*",
+          "ignore": [
+            'ignore_e'
+          ],
+          "autoUpload": true,
+          "autoDelete": true
+        },
+        "syncOption": {
+          "delete": true,
+          "update": true,
+          "skipCreate": false,
+          "ignoreExisting": false,
+        },
       },
-      "syncOption": {
-        "delete": true,
-        "update": true,
-        "skipCreate": false,
-        "ignoreExisting": false,
-      },
-    }, fileTree, fileTree,
-      () => {
+      local: fileTree,
+      remote: fileTree,
+      beforeWatchInstructions: async () => {
         // create new link to watched file 
         fs.symlinkSync("/local/a", "/local/c/d/linkto_watched_a");
         fs.symlinkSync("/remote/a", "/remote/c/d/linkto_watched_a");
@@ -599,13 +620,14 @@ describe('filewatch', () => {
 `
         );
       },
-      () => {
+      watchedInstructions: async () => {
         // change watched target 
         fs.writeFileSync('/local/a', 'changed a');
 
         // change unwatched target
         fs.writeFileSync('/local/c/ignore_e/e-a', 'changed e-a');
-      });
+      }
+    });
 
 
     expect(fs.lstatSync('/local/c/d/linkto_watched_a').isSymbolicLink()).toBe(true);
