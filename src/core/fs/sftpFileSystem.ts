@@ -277,7 +277,7 @@ export default class SFTPFileSystem extends RemoteFileSystem {
 
   mkdir(dir: string): Promise<void> {
     return new Promise<void>((resolve, reject) => {
-      this.retryOnSftpFailureWrapper(this.sftp.mkdir)(dir, err => {
+      this.sftp.mkdir(dir, err => {
         if (err) {
           reject(err);
           return;
