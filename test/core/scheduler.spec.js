@@ -16,7 +16,7 @@ const delay = millisecends =>
   new Promise(resolve => {
     setTimeout(() => {
       resolve();
-    }, millisecends);
+    }, millisecends).unref();
   });
 const fixture = Symbol('fixture');
 

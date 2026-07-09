@@ -60,6 +60,7 @@ interface ServiceOption {
 
 interface WatcherConfig {
   files: false | string;
+  ignore: false | string[];
   autoUpload: boolean;
   autoDelete: boolean;
 }
@@ -103,7 +104,7 @@ export interface ServiceConfig
 }
 
 export interface WatcherService {
-  create(watcherBase: string, watcherConfig: WatcherConfig): any;
+  create(watcherBase: string, watcherConfig: Omit<WatcherConfig, 'ignore'> & { ignore?: ((fsPath: string) => boolean) | null; }): any;
   dispose(watcherBase: string): void;
 }
 
@@ -462,7 +463,11 @@ export default class FileService {
       this._eventEmitter.emit(Event.BEFORE_TRANSFER, task);
     });
     scheduler.onTaskDone((err, task) => {
-      this._pendingTransferTasks.delete(task as TransferTask);
+      // wait a little before removing the task from the pending task list,
+      // in case file watcher events are not generated immediately
+      setTimeout(() => {
+        this._pendingTransferTasks.delete(task as TransferTask);
+      }, 1000);
       this._eventEmitter.emit(Event.AFTER_TRANSFER, err, task);
     });
 
@@ -618,7 +623,22 @@ export default class FileService {
   }
 
   private _createWatcher() {
-    this._watcherService.create(this.baseDir, this._watcherConfig);
+
+    const watcherIgnore = this._createIgnoreFn({ ...this._config, ignore: this._watcherConfig.ignore || [] });
+
+    this._watcherService.create(this.baseDir, {
+      ...this._watcherConfig,
+      ignore: (fsPath: string) => {
+        // ignore files which are ignored by global ignore setting
+        const globalIgnore = this.getConfig().ignore;
+        if (globalIgnore && globalIgnore(fsPath)) return true;
+
+        // finally ignore files which are ignored in the ignore setting of the watcher
+        if (watcherIgnore && watcherIgnore(fsPath)) return true;
+
+        return false;
+      },
+    });
   }
 
   private _disposeWatcher() {

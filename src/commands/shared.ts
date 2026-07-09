@@ -69,7 +69,7 @@ export function selectContext(): Promise<Uri | undefined> {
         }
 
         // cancel selection
-        resolve();
+        resolve(undefined);
       }, reject);
   });
 }

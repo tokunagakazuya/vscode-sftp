@@ -80,6 +80,7 @@ export default abstract class FileSystem {
   abstract chmod(path: string, mode: number): Promise<void>;
   abstract list(dir: string, option?): Promise<FileEntry[]>;
   abstract lstat(path: string): Promise<FileStats>;
+  abstract stat(path: string): Promise<FileStats>;
   abstract readlink(path: string): Promise<string>;
   abstract symlink(targetPath: string, path: string): Promise<void>;
   abstract unlink(path: string): Promise<void>;

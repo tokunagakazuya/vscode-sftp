@@ -7,6 +7,7 @@ import { WatcherService, TransferDirection } from '../core';
 import app from '../app';
 import StatusBarItem from '../ui/statusBarItem';
 import { getRunningTransformTasks } from './serviceManager';
+import { realpathSync } from 'fs';
 
 const watchers: {
   [x: string]: vscode.FileSystemWatcher;
@@ -22,15 +23,7 @@ function doUpload() {
   const files = Array.from(uploadQueue).sort((a, b) => fileDepth(b.fsPath) - fileDepth(a.fsPath));
   uploadQueue.clear();
 
-  const currentDownloadTasks = getRunningTransformTasks().filter(
-    task => task.transferType === TransferDirection.REMOTE_TO_LOCAL
-  );
-
   files.forEach(async uri => {
-    // current target is still in downloading, so don't upload it.
-    if (currentDownloadTasks.find(task => task.localFsPath === uri.fsPath)) {
-      return;
-    }
 
     const fspath = uri.fsPath;
     logger.info(`[watcher/updated] ${fspath}`);
@@ -52,8 +45,17 @@ function doDelete() {
     try {
       await removeRemote(uri);
     } catch (error) {
-      logger.error(error, `remove ${fspath}`);
-      app.sftpBarItem.updateStatus(StatusBarItem.Status.error);
+      if (error.message.includes('ENOENT')) {
+        // No such file
+        // In the case of deletion of files and folders, no task is created, no task is registered in the pendingTasks list.
+        // The deletion is performed "immediately", i.e. in doDelete function.
+        // Hence, the deletion triggered by the watcher due to the sync deletion cannot be avoided 
+        // as opposed to what is done in upload functions.
+        // TODO: maybe refactor the deletion to be task based too?
+      } else {
+        logger.info(error, `remove ${fspath}`, error.message);
+        app.sftpBarItem.updateStatus(StatusBarItem.Status.error);
+      }
     }
   });
 }
@@ -65,6 +67,27 @@ function uploadHandler(uri: vscode.Uri) {
   if (!isValidFile(uri)) {
     return;
   }
+
+  // further to debounce, look in current uploadQueue if we have already planned to upload the file
+  // 
+  // Note: possibly maybe we should see how to handle the case where this is already an uploading task for this file ?
+  // - cancel the existing not running tasks and add a new one in uploadQueue?
+  // - also maybe we should have a look at the scheduler to make sure 2 tasks on the same file cannot run in parallel
+  if (Array.from(uploadQueue).some(u => u.fsPath === uri.fsPath)) {
+    // file is already planned to be uploaded, ignore
+    return;
+  }
+
+  const currentDownloadTasks = getRunningTransformTasks().filter(
+    task => task.transferType === TransferDirection.REMOTE_TO_LOCAL
+  );
+
+  // current target is still in downloading, so don't upload it.
+  // use realpath in the check, to avoid uploading a file which is a symlink to a downloading file.
+  if (currentDownloadTasks.find(task => realpathSync(task.localFsPath) === uri.fsPath)) {
+    return;
+  }
+
 
   uploadQueue.add(uri);
   debouncedUpload();
@@ -80,7 +103,7 @@ function getWatcher(id) {
 
 function createWatcher(
   watcherBase: string,
-  watcherConfig: { files: false | string; autoUpload: boolean; autoDelete: boolean }
+  watcherConfig: { files: false | string; ignore: ((fsPath: string) => boolean) | null, autoUpload: boolean; autoDelete: boolean }
 ) {
   let watcher = getWatcher(watcherBase);
   if (watcher) {
@@ -106,20 +129,30 @@ function createWatcher(
   );
   addWatcher(watcherBase, watcher);
 
+  function checkIgnoredAndUploadHandler(handler: (uri: vscode.Uri) => void) {
+    return (uri: vscode.Uri) => {
+      if (watcherConfig.ignore && watcherConfig.ignore(uri.fsPath)) {
+        return;
+      }
+      handler(uri);
+    }
+  }
+
   if (watcherConfig.autoUpload) {
-    watcher.onDidCreate(uploadHandler);
-    watcher.onDidChange(uploadHandler);
+
+    watcher.onDidCreate(checkIgnoredAndUploadHandler(uploadHandler));
+    watcher.onDidChange(checkIgnoredAndUploadHandler(uploadHandler));
   }
 
   if (watcherConfig.autoDelete) {
-    watcher.onDidDelete(uri => {
+    watcher.onDidDelete(checkIgnoredAndUploadHandler(uri => {
       if (!isValidFile(uri)) {
         return;
       }
 
       deleteQueue.add(uri);
       debouncedDelete();
-    });
+    }));
   }
 }
 

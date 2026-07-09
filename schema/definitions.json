@@ -15,8 +15,17 @@
         "properties": {
           "files": {
             "type": "string",
-            "description": "A glob pattern.",
+            "description": "A glob pattern. To negate, do not prefix with '!', use the 'watcher.ignore' setting.\nSee https://code.visualstudio.com/docs/editor/glob-patterns for details about the glob pattern.",
             "default": "**/*"
+          },
+          "ignore": {
+            "type": "array",
+            "description": "Files to ignore. Same behavior as gitignore.",
+            "items": {
+              "type": "string",
+              "description": "Ignore pattern."
+            },
+            "default": []
           },
           "autoUpload": {
             "type": "boolean",

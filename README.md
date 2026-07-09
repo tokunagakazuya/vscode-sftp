@@ -2,8 +2,26 @@
 
 This plugin is an update of [SFTP](https://marketplace.visualstudio.com/items?itemName=Natizyskunk.sftp) by [@tokunagakazuya](https://github.com/tokunagakazuya). To bring the user experience closer to JetBrains IDEs (PhpStorm, WebStorm), the following modifications were made:
 
-- Save directly opened remote files with overwrite  
-- Expanded menu in the remote explorer  
+- (new) Save directly opened remote files with overwrite  
+- (new) Expanded menu in the remote explorer  
+- (fix) Many fixes in FileWatcher
+  - Was sometimes uploading files twice, creating File Not Found errors when useTempFile=true
+  - Was not respecting ignore settings in case of directory deletion
+  - Was throwing NOENT No such file, when syncing a removed folder
+  - Respecting ignore files (global ignore file and watcher.ignore)
+  - Stopped triggering upload of file to remote when local file is updated from remote
+- (fix) sync both directions
+- (fix) SFTP 'Failure' errors were occurring randomly when reading directories. Might fix:
+  - [#503](https://github.com/Natizyskunk/vscode-sftp/issues/503)
+  - [#527](https://github.com/Natizyskunk/vscode-sftp/issues/527)
+- (fix) better handling of symbolic links
+- (dev) Many fixes and improvements to the test framework:
+  - Repaired Launch Tests task
+  - vscode mock
+  - npm task
+  - Repaired Jest
+
+---
 
 Please note that some of the features of [@satiromarra](https://marketplace.visualstudio.com/items?itemName=satiromarra.code-sftp), which offers the most feature-rich implementation, are not available.
 
@@ -44,16 +62,11 @@ VSCode-SFTP enables you to add, edit or delete files within a local directory an
 
 ## Installation
 
-### Method 1 (Recommended : Auto update)
-1. Select Extensions (Ctrl + Shift + X).
-2. Uninstall current sftp extension from @liximomo.
-3. Install new extension directly from VS Code Marketplace : https://marketplace.visualstudio.com/items?itemName=tokunagakazuya.sftp.
-4. Voilà!
+To install or update the extension, you need to load a new VSIX file into VSCode. Our VSIX files are produced by Github workflow runs, each time a new commit is done to the repository. You can find them in the ["Actions"](https://github.com/tokunagakazuya/vscode-sftp/actions) tab of the Github repository. In the workflow run list, select the most recent containing a commit, scroll down to the "Artifacts" section and download the VSIX file.
 
-### Method 2 (Manual update)
-To install just follow these steps from within VSCode:
+Then, just follow these steps from within VSCode:
 1. Select Extensions (Ctrl + Shift + X).
-2. Uninstall current sftp extension from @liximomo.
+2. Uninstall any previous sftp extension, including from other repositories such as @liximomo's one.
 3. Open "More Action" menu(ellipsis on the top) and click "Install from VSIX…".
 4. Locate VSIX file and select.
 5. Reload VSCode.

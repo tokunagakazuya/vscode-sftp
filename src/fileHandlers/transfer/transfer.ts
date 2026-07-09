@@ -113,7 +113,7 @@ async function transferFolder(
     )
   );
 
-  logger.info('folder transfered.');
+  logger.info(`folder ${srcFsPath} transfered.`);
 }
 
 async function transferFile(
@@ -374,19 +374,30 @@ async function _sync(
     fileMissed.forEach(file => removeFile(file, targetFs, FileType.File, transferOption));
     dirMissed.forEach(file => removeFile(file, targetFs, FileType.Directory, transferOption));
 
-    const transFilePromise = file2trans.map(([src, target, direction, option]) =>
-      transferFile(
-        {
+    const transFilePromise = file2trans.map(([src, target, direction, option]) => {
+      const transferFileConfig = direction == TransferDirection.REMOTE_TO_LOCAL
+        ? {
           ...config,
+          transferOption: { ...option, useTempFile: false },
           transferDirection: direction,
-          transferOption: option,
           srcFsPath: src,
+          srcFs: transferOption.bothDiretions ? config.targetFs : config.srcFs,
           targetFsPath: target,
-        },
+          targetFs: transferOption.bothDiretions ? config.srcFs : config.targetFs,
+        } : {
+          ...config,
+          transferOption: option,
+          transferDirection: direction,
+          srcFsPath: src,
+          srcFs: config.srcFs,
+          targetFsPath: target,
+          targetFs: config.targetFs,
+        };
+      transferFile(transferFileConfig,
         FileType.File,
         collect
-      )
-    );
+      );
+    });
 
     const transDirPromise = dir2trans.map(([src, target]) =>
       transferFolder(
@@ -418,7 +429,18 @@ async function _sync(
   await targetFs.ensureDir(targetFsPath);
 
   const files = await Promise.all([
-    srcFs.list(srcFsPath).catch(err => []),
+    srcFs.list(srcFsPath).catch(err => []).then(async entries => {
+      // consider symlink to dirs as dirs so that they can be synced correctly
+      for await (const entry of entries) {
+        if (entry.type === FileType.SymbolicLink) {
+          const stat = await srcFs.stat(entry.fspath);
+          if (stat.type === FileType.Directory) {
+            entry.type = FileType.Directory;
+          }
+        }
+      }
+      return entries;
+    }),
     targetFs.list(targetFsPath).catch(err => []),
   ]);
   await syncFiles(...files);

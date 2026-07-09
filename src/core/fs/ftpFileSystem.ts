@@ -103,6 +103,10 @@ export default class FTPFileSystem extends RemoteFileSystem {
     return fileStat;
   }
 
+  async stat(path: string): Promise<FileStats> {
+    return this.lstat(path);
+  }
+
   open(path: string, flags: string, mode?: number): Promise<FtpFileHandle> {
     return Promise.resolve({
       path,
